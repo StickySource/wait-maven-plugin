@@ -21,15 +21,29 @@ import org.apache.maven.plugin.MojoFailureException;
 
 
 /**
+ * Wait for user input, intended as a method of pausing for interactive testing
+ *
  * @goal wait
  */
 public class WaitMojo extends AbstractMojo {
 
+  /**
+   * The prompt message displayed before waiting
+   * @parameter default-value="Press ENTER key to continue..."
+   */
+  private String promptMessage;
+
+  /**
+   * The finished waiting message
+   * @parameter default-value="Thanks, done waiting"
+   */
+  private String completionMessage;
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    System.out.println("Press ENTER key to continue...");
+    System.out.println(promptMessage);
     wait(System.in);
-    System.out.println("Thanks, done waiting");
+    System.out.println(completionMessage);
   }
 
   void wait(InputStream in) throws MojoExecutionException {

@@ -18,18 +18,21 @@ import org.apache.maven.plugin.MojoFailureException;
 
 
 /**
+ * The pause goal lets you pause the build process for a specified time period
+ *
  * @goal pause
  */
 public class PauseMojo extends AbstractMojo {
 
   /**
-   * @parameter expression="${timeout}" alias="timeout"
+   * The length of time to pause in milliseconds
+   * @parameter default-value="0"
    */
   private long timeout;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    System.out.println("Sleeping for " + timeout + "ms");
+    getLog().info("Sleeping for " + timeout + "ms");
     try {
       Thread.sleep(timeout);
     }
