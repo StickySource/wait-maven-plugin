@@ -15,19 +15,22 @@ package net.stickycode.plugin.wait;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * The pause goal lets you pause the build process for a specified time period
  *
- * @goal pause
  */
-public class PauseMojo extends AbstractMojo {
+@Mojo(threadSafe = true, name = "pause", requiresDirectInvocation = true)
+public class PauseMojo
+    extends AbstractMojo {
 
   /**
    * The length of time to pause in milliseconds
-   * @parameter default-value="0"
+   * 
    */
+  @Parameter(defaultValue = "0")
   private long timeout;
 
   @Override
