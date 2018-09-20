@@ -57,7 +57,7 @@ public class WaitMojo
       System.out.println(completionMessage);
     }
     else
-      getLog().info("Not waiting for anything");
+      getLog().info("Not waiting, -Dwait=true");
   }
 
   void wait(InputStream in) throws MojoExecutionException {
