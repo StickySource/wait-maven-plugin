@@ -15,11 +15,16 @@ package net.stickycode.plugin.wait;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.maven.AbstractMavenLifecycleParticipant;
+import org.apache.maven.execution.BuildSummary;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Wait for user input, intended as a method of pausing for interactive testing
@@ -28,6 +33,40 @@ import org.apache.maven.plugins.annotations.Parameter;
 @Mojo(threadSafe = true, name = "wait", requiresDirectInvocation = true)
 public class WaitMojo
     extends AbstractMojo {
+
+  private final class LetItFinish
+      implements Runnable {
+
+    private Thread thread;
+
+    private boolean waiting = true;
+
+    public LetItFinish(Thread thread) {
+      this.thread = thread;
+    }
+
+    @Override
+    public void run() {
+      if (waiting) {
+        thread.interrupt();
+
+        try {
+          for (int i = 0; waiting && i < shutdownLatency; i += 1) {
+            // give it a little bit of time to write to the console
+            Thread.sleep(1000);
+            // we don't care what the result is only that there is one
+            waiting = session.getResult().getBuildSummary(project) == null;
+          }
+        }
+        catch (InterruptedException e) {
+        }
+      }
+    }
+
+    public void userIsFinished() {
+      waiting = false;
+    }
+  }
 
   /**
    * The prompt message displayed before waiting
@@ -49,6 +88,18 @@ public class WaitMojo
   @Parameter(defaultValue = "false", property = "wait")
   private Boolean wait = false;
 
+  /**
+   * Time to wait for the build to finish after releasing the pause
+   */
+  @Parameter(defaultValue = "60")
+  private int shutdownLatency = 60;
+
+  @Parameter(defaultValue = "${project}")
+  private MavenProject project;
+
+  @Parameter(defaultValue = "${session}")
+  private MavenSession session;
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (wait) {
@@ -61,11 +112,18 @@ public class WaitMojo
   }
 
   void wait(InputStream in) throws MojoExecutionException {
+    LetItFinish cleanup = new LetItFinish(Thread.currentThread());
+    Runtime.getRuntime().addShutdownHook(new Thread(cleanup));
     try {
-      in.read();
+      while (in.available() == 0)
+        Thread.sleep(1000);
+
+      cleanup.userIsFinished();
     }
     catch (IOException e) {
       throw new MojoExecutionException("Failed to read user input", e);
+    }
+    catch (InterruptedException e) {
     }
   }
 
