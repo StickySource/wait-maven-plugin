@@ -18,32 +18,46 @@ import java.io.InputStream;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  * Wait for user input, intended as a method of pausing for interactive testing
  *
- * @goal wait
  */
-public class WaitMojo extends AbstractMojo {
+@Mojo(threadSafe = true, name = "wait", requiresDirectInvocation = true)
+public class WaitMojo
+    extends AbstractMojo {
 
   /**
    * The prompt message displayed before waiting
-   * @parameter default-value="Press ENTER key to continue..."
+   * 
    */
+  @Parameter(defaultValue = "Press ENTER key to continue...")
   private String promptMessage;
 
   /**
    * The finished waiting message
-   * @parameter default-value="Thanks, done waiting"
+   * 
    */
+  @Parameter(defaultValue = "Thanks, done waiting")
   private String completionMessage;
+
+  /**
+   * By default don't wait, just wait when the property 'wait' is set
+   */
+  @Parameter(defaultValue = "false", property = "wait")
+  private Boolean wait = false;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    System.out.println(promptMessage);
-    wait(System.in);
-    System.out.println(completionMessage);
+    if (wait) {
+      System.out.println(promptMessage);
+      wait(System.in);
+      System.out.println(completionMessage);
+    }
+    else
+      getLog().info("Not waiting for anything");
   }
 
   void wait(InputStream in) throws MojoExecutionException {
